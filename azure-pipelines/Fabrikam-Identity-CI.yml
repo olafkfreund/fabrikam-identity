@@ -1,0 +1,32 @@
+---
+trigger:
+  branches:
+    include:
+    - main
+pool:
+  vmImage: ubuntu-latest
+variables:
+- group: fabrikam-identity-secrets
+strategy:
+  matrix:
+    node20:
+      nodeVersion: 20.x
+    node18:
+      nodeVersion: 18.x
+steps:
+- task: NodeTool@0
+  inputs:
+    versionSpec: "$(nodeVersion)"
+- script: npm ci
+  displayName: Install
+- script: npm run lint && npm test
+  displayName: Verify
+- task: DownloadSecureFile@1
+  name: oidcCert
+  inputs:
+    secureFile: fabrikam-oidc-signing.pem
+- task: WhiteSource@21
+  inputs:
+    projectName: fabrikam-identity
+- script: npm run build
+  displayName: Build
