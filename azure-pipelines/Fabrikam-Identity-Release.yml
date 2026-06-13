@@ -1,0 +1,22 @@
+---
+trigger: none
+pool:
+  vmImage: ubuntu-latest
+stages:
+- stage: Release
+  jobs:
+  - deployment: publish
+    environment: fabrikam-identity-prod
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - task: AzureWebApp@1
+            inputs:
+              azureSubscription: fabrikam-azure-prod
+              appName: fabrikam-identity
+              package: "$(Pipeline.Workspace)/drop"
+          - task: contoso.deploy-tools.NotifyTeams@3
+            inputs:
+              webhook: "$(TEAMS_WEBHOOK)"
+              message: Identity service released
