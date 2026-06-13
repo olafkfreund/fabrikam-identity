@@ -1,0 +1,62 @@
+name: Fabrikam-Identity/Fabrikam-Identity-CI
+on:
+  push:
+    branches:
+    - main
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        nodeVersion:
+        - 20.x
+        - 18.x
+    steps:
+    - name: checkout
+      uses: actions/checkout@v4.1.0
+    - uses: actions/setup-node@v4.0.0
+      with:
+        node-version: "${{ matrix.nodeVersion }}"
+    - name: Install
+      run: npm ci
+    - name: Verify
+      run: npm run lint && npm test
+#     # This item has no matching transformer
+#     - task: DownloadSecureFile@1
+#       name: oidcCert
+#       inputs:
+#         secureFile: fabrikam-oidc-signing.pem
+#     # This item has no matching transformer
+#     - task: WhiteSource@21
+#       inputs:
+#         projectName: fabrikam-identity
+    - name: Build
+      run: npm run build
+
+# ──────────────────────────────────────────────────────────────────────
+# bifrost: gap-fills below — REVIEW BEFORE USE
+# Everything above this banner is GitHub Actions Importer output.
+# Everything below is LLM-proposed YAML for constructs the Importer could
+# not convert. Each block is tagged with its source construct + prompt id.
+# ──────────────────────────────────────────────────────────────────────
+
+# bifrost-gap-fill: DownloadSecureFile@1 (prompt: gap-fill.v1)
+    - name: oidcCert (download secure file)
+      id: oidcCert
+      env:
+        OIDC_SIGNING_PEM: ${{ secrets.FABRIKAM_OIDC_SIGNING_PEM }}
+      run: |
+        secure_file_path="${RUNNER_TEMP}/fabrikam-oidc-signing.pem"
+        printf '%s' "$OIDC_SIGNING_PEM" > "$secure_file_path"
+        chmod 600 "$secure_file_path"
+        echo "secureFilePath=$secure_file_path" >> "$GITHUB_OUTPUT"
+
+# bifrost-gap-fill: WhiteSource@21 (prompt: gap-fill.v1)
+    - name: Mend (WhiteSource) scan
+      env:
+        WS_APIKEY: ${{ secrets.WS_APIKEY }}
+        WS_PROJECTNAME: fabrikam-identity
+        WS_PRODUCTNAME: ${{ github.repository }}
+      run: |
+        curl -sLJO https://unified-agent.s3.amazonaws.com/wss-unified-agent.jar
+        java -jar wss-unified-agent.jar -d .
