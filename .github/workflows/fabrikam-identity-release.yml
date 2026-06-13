@@ -1,0 +1,26 @@
+name: Fabrikam-Identity/Fabrikam-Identity-Release
+on:
+  workflow_dispatch:
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment:
+      name: fabrikam-identity-prod
+    if: github.RUN_NUMBER == 1
+    steps:
+    - name: checkout
+      uses: actions/checkout@v4.1.0
+    - name: download artifact
+      uses: actions/download-artifact@v4.1.0
+    - uses: azure/login@v1.6.0
+      with:
+        creds: "${{ secrets.AZURE_CREDENTIALS }}"
+    - uses: azure/webapps-deploy@v3.0.0
+      with:
+        app-name: fabrikam-identity
+        package: "${{ runner.workspace }}/drop"
+#     # This item has no matching transformer
+#     - task: contoso.deploy-tools.NotifyTeams@3
+#       inputs:
+#         webhook: "${{ env.TEAMS_WEBHOOK }}"
+#         message: Identity service released
